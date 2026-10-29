@@ -1,0 +1,56 @@
+pipeline {
+    agent any
+
+    environment {
+        // Replace with the EC2 public IPv4 address or public DNS name.
+        EC2_HOST = 'REPLACE_WITH_EC2_PUBLIC_IP'
+        APP_DIR = '/opt/ebs-demo'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Validate files') {
+            steps {
+                script {
+                    if (!fileExists('app.py') || !fileExists('requirements.txt') || !fileExists('deploy.sh')) {
+                        error('Required files are missing from the repository root.')
+                    }
+                    if (env.EC2_HOST == 'REPLACE_WITH_EC2_PUBLIC_IP') {
+                        error('Edit Jenkinsfile and set EC2_HOST before building.')
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to EC2') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key',
+                    keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                    bat '''
+@echo off
+ssh -i "%SSH_KEY%" -o BatchMode=yes -o ConnectTimeout=20 %SSH_USER%@%EC2_HOST% "mkdir -p %APP_DIR%"
+if errorlevel 1 exit /b 1
+scp -i "%SSH_KEY%" -o BatchMode=yes app.py requirements.txt deploy.sh %SSH_USER%@%EC2_HOST%:%APP_DIR%/
+if errorlevel 1 exit /b 1
+ssh -i "%SSH_KEY%" -o BatchMode=yes %SSH_USER%@%EC2_HOST% "chmod +x %APP_DIR%/deploy.sh && sudo %APP_DIR%/deploy.sh"
+if errorlevel 1 exit /b 1
+'''
+                }
+            }
+        }
+
+        stage('Deployment status') {
+            steps {
+                echo 'Deployment commands completed. Open http://EC2_HOST:5000 and test saving a note.'
+            }
+        }
+    }
+
+    post {
+        success { echo 'EBS demo deployment completed successfully.' }
+        failure { echo 'Check Console Output, SSH access, security group, and EBS mount.' }
+    }
+}
