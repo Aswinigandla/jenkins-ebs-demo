@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Replace with the EC2 public IPv4 address or public DNS name.
-        EC2_HOST = 'REPLACE_WITH_EC2_PUBLIC_IP'
+       EC2_HOST = '15.252.236.154'
         APP_DIR = '/opt/ebs-demo'
     }
 
