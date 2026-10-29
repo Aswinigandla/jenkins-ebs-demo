@@ -31,7 +31,7 @@ pipeline {
     }
 }
 
-        stage('Deploy to EC2') {
+      stage('Deploy to EC2') {
     steps {
         dir('jenkins-ebs-demo') {
             withCredentials([
@@ -42,14 +42,24 @@ pipeline {
                 )
             ]) {
                 bat '''
-                  ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new -o BatchMode=yes -o ConnectTimeout=20 %SSH_USER%@%EC2_HOST% "mkdir -p /opt/ebs-demo"
-if errorlevel 1 exit /b 1
+                    echo Fixing SSH key permissions...
+                    icacls "%SSH_KEY%" /inheritance:r
+                    icacls "%SSH_KEY%" /grant:r "SYSTEM:R" "Administrators:R"
 
-                   scp -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new app.py requirements.txt deploy.sh %SSH_USER%@%EC2_HOST%:/opt/ebs-demo/
-if errorlevel 1 exit /b 1
+                    echo Testing SSH connection...
+                    ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new -o BatchMode=yes -o ConnectTimeout=20 ec2-user@15.252.236.154 "mkdir -p /opt/ebs-demo"
 
-                  ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new %SSH_USER%@%EC2_HOST% "chmod +x /opt/ebs-demo/deploy.sh && sudo /opt/ebs-demo/deploy.sh"
-if errorlevel 1 exit /b 1
+                    if errorlevel 1 exit /b 1
+
+                    echo Copying application files...
+                    scp -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new app.py requirements.txt deploy.sh ec2-user@15.252.236.154:/opt/ebs-demo/
+
+                    if errorlevel 1 exit /b 1
+
+                    echo Running deployment script...
+                    ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new ec2-user@15.252.236.154 "chmod +x /opt/ebs-demo/deploy.sh && sudo /opt/ebs-demo/deploy.sh"
+
+                    if errorlevel 1 exit /b 1
                 '''
             }
         }
