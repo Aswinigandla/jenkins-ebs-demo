@@ -13,17 +13,23 @@ pipeline {
         }
 
         stage('Validate files') {
-            steps {
-                script {
-                    if (!fileExists('app.py') || !fileExists('requirements.txt') || !fileExists('deploy.sh')) {
-                        error('Required files are missing from the repository root.')
-                    }
-                    if (env.EC2_HOST == 'REPLACE_WITH_EC2_PUBLIC_IP') {
-                        error('Edit Jenkinsfile and set EC2_HOST before building.')
-                    }
+    steps {
+        dir('jenkins-ebs-demo') {
+            script {
+                if (!fileExists('app.py') ||
+                    !fileExists('requirements.txt') ||
+                    !fileExists('deploy.sh')) {
+                    error('Required application files are missing.')
+                }
+
+                if (env.EC2_HOST ==
+                    'REPLACE_WITH_EC2_PUBLIC_IP') {
+                    error('Set the EC2 public IP in Jenkinsfile.')
                 }
             }
         }
+    }
+}
 
         stage('Deploy to EC2') {
             steps {
