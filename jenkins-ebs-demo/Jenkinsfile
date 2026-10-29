@@ -36,7 +36,7 @@ pipeline {
         dir('jenkins-ebs-demo') {
             withCredentials([
                 sshUserPrivateKey(
-                    credentialsId: 'ec2-ssh-key',
+                   credentialsId: 'ec2-ssh-key-fixed',
                     keyFileVariable: 'SSH_KEY',
                     usernameVariable: 'SSH_USER'
                 )
