@@ -47,8 +47,7 @@ pipeline {
                     icacls "%SSH_KEY%" /grant:r "SYSTEM:R" "Administrators:R"
 
                     echo Testing SSH connection...
-                    ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new -o BatchMode=yes -o ConnectTimeout=20 ec2-user@15.252.236.154 "mkdir -p /opt/ebs-demo"
-
+                   ssh -i "%SSH_KEY%" -o StrictHostKeyChecking=accept-new ec2-user@15.252.236.154 "ls -la /opt/ebs-demo && chmod +x /opt/ebs-demo/deploy.sh && sudo bash /opt/ebs-demo/deploy.sh"
                     if errorlevel 1 exit /b 1
 
                     echo Copying application files...
